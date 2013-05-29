@@ -242,6 +242,14 @@
 			$xml = new XMLElement('data');
 			$xml->appendChild($entry_xml);
 
+			//Fetch any dependent datasources. These can be used to build the urls in xpath
+			$datasources = explode(',',Symphony::Configuration()->get('datasources', MEU_GROUP));
+			foreach ($datasources as $dsName) {
+				$ds = DatasourceManager::create($dsName, array());
+				$arr = array();
+				$dsXml = $ds->execute(&$arr); 
+				$xml->appendChild($dsXml);
+			}
 			$dom = new DOMDocument();
 			$dom->loadXML($xml->generate(true));
 
