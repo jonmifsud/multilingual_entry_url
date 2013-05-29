@@ -225,7 +225,11 @@
 			$expression = $this->get('expression');
 			foreach( FLang::getLangs() as $lc ){
 				$result = $this->getExpression($xpath, $expression, $lc);
-				$data['value-'.$lc] = ($main_lang !== $lc ? '/'.$lc : '').PLHManagerURL::sym2lang($result, $lc);
+				//if domain_language_redirect is installed & enabled
+				if (Symphony::ExtensionManager()->fetchInstalledVersion('domain_language_redirect')!=NULL)
+					$data['value-'.$lc] = Symphony::Configuration()->get($lc, 'domain_language_redirect').'/'.PLHManagerURL::sym2lang($result, $lc);
+				else 
+					$data['value-'.$lc] = ($main_lang !== $lc ? '/'.$lc : '').PLHManagerURL::sym2lang($result, $lc);
 			}
 			$data['value'] = $data['value-'.$main_lang];
 
@@ -235,7 +239,6 @@
 				$data['label-'.$lc] = $this->getExpression($xpath, $expression, $lc);
 			}
 			$data['label'] = $data['label-'.$main_lang];
-
 
 			// Save:
 			Symphony::Database()->update(
