@@ -214,7 +214,13 @@
 		public function compile($entry){
 			self::$ready = false;
 
-			$xpath = $this->_driver->getXPath($entry);
+			$expression = $this->get('expression');
+			if(substr($expression, -4) === ".xsl")
+				$isXpath = false;
+			else 
+				$isXpath = true;
+
+			$xpath = $this->_driver->getXPath($entry,$isXpath);
 
 			self::$ready = true;
 
@@ -222,7 +228,6 @@
 			$data = array();
 
 			// values
-			$expression = $this->get('expression');
 			foreach( FLang::getLangs() as $lc ){
 				$result = $this->getExpression($xpath, $expression, $lc);
 				//if domain_language_redirect is installed & enabled
@@ -235,6 +240,10 @@
 
 			// labels
 			$expression = $this->get('anchor_label');
+			if((substr($expression, -4) === ".xsl")==$isXpath){
+				$xpath = $this->_driver->getXPath($entry,!$isXpath);
+			}
+
 			foreach( FLang::getLangs() as $lc ){
 				$data['label-'.$lc] = $this->getExpression($xpath, $expression, $lc);
 			}
@@ -250,32 +259,54 @@
 
 
 		private function getExpression($xpath, $expression, $lc){
-			$replacements = array();
+			// $expression = '/sections/articles.xsl';
+			if(substr($expression, -4) === ".xsl"){
+				// If expression is an XSL file should use xsl templates 
+				$xsl = new DOMDocument;
+				// $xsl->load(WORKSPACE.'/sections/pages.xsl');
+				$xsl->load(WORKSPACE.$expression);
 
-			// Find queries:
-			preg_match_all('/\{[^\}]+\}/', $expression, $matches);
+				$proc = new XSLTProcessor;
+				$proc->importStyleSheet($xsl);
 
-			// Find replacements:
-			foreach( $matches[0] as $match ){
-				$new_match = str_replace('$language_code', "$lc", $match);
+				$xml = $xpath;
+				$element = $xml->createElement('language', $lc);
+				$realXpath = new DOMXPath($xml);
+				$data = $realXpath->query('/data');
+				$data = $data->item(0);
+				$data->appendChild($element);
 
-				$results = @$xpath->query(trim($new_match, '{}'));
+				return trim(substr($proc->transformToXML($xml), strlen('<?xml version="1.0"?>')));
+			} else {
+				//otherwise fall back to xpath behaviour stuff
 
-				if( $results->length ){
-					$replacements[$match] = $results->item(0)->nodeValue;
-				} else{
-					$replacements[$match] = '';
+				$replacements = array();
+
+				// Find queries:
+				preg_match_all('/\{[^\}]+\}/', $expression, $matches);
+
+				// Find replacements:
+				foreach( $matches[0] as $match ){
+					$new_match = str_replace('$language_code', "$lc", $match);
+
+					$results = @$xpath->query(trim($new_match, '{}'));
+
+					if( $results->length ){
+						$replacements[$match] = $results->item(0)->nodeValue;
+					} else{
+						$replacements[$match] = '';
+					}
 				}
+
+				// Apply replacements:
+				$value = str_replace(
+					array_keys($replacements),
+					array_values($replacements),
+					$expression
+				);
+
+				return $value;
 			}
-
-			// Apply replacements:
-			$value = str_replace(
-				array_keys($replacements),
-				array_values($replacements),
-				$expression
-			);
-
-			return $value;
 		}
 
 

@@ -216,7 +216,7 @@
 		/*  Utilities */
 		/*------------------------------------------------------------------------------------------------*/
 
-		public function getXPath($entry) {
+		public function getXPath($entry,$xpath = true) {
 			$entry_xml = new XMLElement('entry');
 			$data = $entry->getData();
 
@@ -253,7 +253,9 @@
 			$dom = new DOMDocument();
 			$dom->loadXML($xml->generate(true));
 
-			return new DOMXPath($dom);
+			if ($xpath)
+				return new DOMXPath($dom);
+			else return $dom;
 		}
 
 

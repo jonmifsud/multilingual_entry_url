@@ -21,7 +21,22 @@ Let's say my `Articles` Section with a `Multilingual text` field called `Title`.
 * **Open links in a new window** enforces the hyperlink to spawn a new tab/window
 * **Hide this field on publish page** hides the hyperlink in the entry edit form
 
+### Datasource Support ###
 
+Datasource support has been added via the config. 
+No Options in backend exists yet; however this shall be added in the future. 
+Currently just find the `MULTILINGUAL_ENTRY_URL` block in the config and add the datasources in a comma-separated list.
+
+	'datasources' => 'datasource1,datasource2,datasource3',
+
+### XSLT Support ###
+
+In the latest update XSLT Support was added, allowing you to define a relative path to your `xsl` file which will be executed instead of the xpath query.
+For example:
+
+	/entry-url/articles.xsl
+
+Note that the path can be anything under workspace, entry-url was used for separation. Your template has to match `/` to work.
 
 ### Note about compatibility ###
 
@@ -29,6 +44,8 @@ Currently the URL is generated this way:
 
     /__LANGUAGE-CODE__/URL
 
+However if you have the [Domain Language Redirect](https://github.com/jonmifsud/domain_language_redirect) enabled; 
+the extension will prepend output with the domain set in the Domain Redirect Extension
 
 
 ## 2 Installation ##
