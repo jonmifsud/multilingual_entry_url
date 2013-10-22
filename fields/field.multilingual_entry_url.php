@@ -220,15 +220,17 @@
 			else 
 				$isXpath = true;
 
-			$xpath = $this->_driver->getXPath($entry,$isXpath);
-
 			self::$ready = true;
 
 			$main_lang = FLang::getMainLang();
 			$data = array();
 
+			$originalLang = FLang::getLangCode();
+
 			// values
 			foreach( FLang::getLangs() as $lc ){
+				FLang::setLangCode($lc);
+				$xpath = $this->_driver->getXPath($entry,$isXpath);
 				$result = $this->getExpression($xpath, $expression, $lc);
 				//if domain_language_redirect is installed & enabled
 				if (Symphony::ExtensionManager()->fetchInstalledVersion('domain_language_redirect')!=NULL)
@@ -240,13 +242,19 @@
 
 			// labels
 			$expression = $this->get('anchor_label');
-			if((substr($expression, -4) === ".xsl")==$isXpath){
-				$xpath = $this->_driver->getXPath($entry,!$isXpath);
-			}
+			if(substr($expression, -4) === ".xsl")
+				$isXpath = false;
+			else 
+				$isXpath = true;
 
 			foreach( FLang::getLangs() as $lc ){
+				FLang::setLangCode($lc);
+				$xpath = $this->_driver->getXPath($entry,$isXpath);
 				$data['label-'.$lc] = $this->getExpression($xpath, $expression, $lc);
 			}
+			
+			FLang::setLangCode($originalLang);
+
 			$data['label'] = $data['label-'.$main_lang];
 
 			// Save:
@@ -276,12 +284,14 @@
 				$data = $data->item(0);
 
 				$languageExists = false;
-				$children = $data->getElementsByTagName('language');
+				$children = $data->childNodes;
 				foreach ($children as $key => $child) {
-					$child->nodeValue = $lc;
-					// var_dump($child->nodeValue);die;
+					if ($child->nodeName == 'language'){
+						$child->nodeValue = $lc;
 
-					$languageExists=true;
+						$languageExists=true;
+
+					}
 				}
 
 				if (!$languageExists){
