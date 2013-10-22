@@ -269,12 +269,25 @@
 				$proc = new XSLTProcessor;
 				$proc->importStyleSheet($xsl);
 
+				
 				$xml = $xpath;
-				$element = $xml->createElement('language', $lc);
 				$realXpath = new DOMXPath($xml);
 				$data = $realXpath->query('/data');
 				$data = $data->item(0);
-				$data->appendChild($element);
+
+				$languageExists = false;
+				$children = $data->getElementsByTagName('language');
+				foreach ($children as $key => $child) {
+					$child->nodeValue = $lc;
+					// var_dump($child->nodeValue);die;
+
+					$languageExists=true;
+				}
+
+				if (!$languageExists){
+					$element = $xml->createElement('language', $lc);
+					$data->appendChild($element);
+				}
 
 				return trim(substr($proc->transformToXML($xml), strlen('<?xml version="1.0"?>')));
 			} else {
